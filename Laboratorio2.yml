@@ -1,0 +1,313 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Infraestructura con 10 EC2 y Load Balancer
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+
+Resources:
+
+# -------- VPC --------
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+# -------- SUBNETS --------
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+
+# -------- ROUTES --------
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  Subnet1Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet1
+      RouteTableId: !Ref RouteTable
+
+  Subnet2Assoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref Subnet2
+      RouteTableId: !Ref RouteTable
+
+# -------- SECURITY GROUPS --------
+  InstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir HTTP
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  LoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG ELB
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+# -------- LOAD BALANCER --------
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Subnets:
+        - !Ref Subnet1
+        - !Ref Subnet2
+      SecurityGroups:
+        - !Ref LoadBalancerSG
+      Listeners:
+        - LoadBalancerPort: 80
+          InstancePort: 80
+          Protocol: HTTP
+      Instances:
+        - !Ref EC2Instance1
+        - !Ref EC2Instance2
+        - !Ref EC2Instance3
+        - !Ref EC2Instance4
+        - !Ref EC2Instance5
+        - !Ref EC2Instance6
+        - !Ref EC2Instance7
+        - !Ref EC2Instance8
+        - !Ref EC2Instance9
+        - !Ref EC2Instance10
+
+# -------- EC2 INSTANCES --------
+
+  # -------- EC2 INSTANCES --------
+  EC2Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet1
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 1" > /usr/share/nginx/html/index.html
+
+  EC2Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet2
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 2" > /usr/share/nginx/html/index.html
+
+  EC2Instance3:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet1
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 3" > /usr/share/nginx/html/index.html
+
+  EC2Instance4:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet2
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 4" > /usr/share/nginx/html/index.html
+
+  EC2Instance5:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet1
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 5" > /usr/share/nginx/html/index.html
+
+  EC2Instance6:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet2
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 6" > /usr/share/nginx/html/index.html
+
+  EC2Instance7:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet1
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 7" > /usr/share/nginx/html/index.html
+
+  EC2Instance8:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet2
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 8" > /usr/share/nginx/html/index.html
+
+  EC2Instance9:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet1
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 9" > /usr/share/nginx/html/index.html
+
+  EC2Instance10:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-00a9f44477dd83e3d
+      SubnetId: !Ref Subnet2
+      SecurityGroupIds: [!Ref InstanceSG]
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras enable nginx1
+          yum clean metadata
+          yum install nginx -y
+          systemctl start nginx
+          systemctl enable nginx
+          echo "Hola, soy Alejandra y este es el Servidor 10" > /usr/share/nginx/html/index.html
+
+Outputs:
+  LoadBalancerDNS:
+    Description: URL del Load Balancer
+    Value: !GetAtt LoadBalancer.DNSName
+
